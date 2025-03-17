@@ -250,6 +250,8 @@ export default function AdminLogin() {
   // For development/testing purposes - allows quick login without Supabase
   const handleDevLogin = () => {
     setIsLoading(true);
+    // Store authentication in localStorage for development mode
+    localStorage.setItem("adminAuthenticated", "true");
     setTimeout(() => {
       navigate("/admin");
     }, 1000);

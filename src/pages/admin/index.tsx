@@ -38,7 +38,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     // Check if user is authenticated from localStorage for development
     const isDevAuthenticated = localStorage.getItem("adminAuthenticated");
-    
+
     const checkAdminStatus = async () => {
       // Wait a short time to ensure auth context is fully loaded
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -49,7 +49,7 @@ const AdminDashboard = () => {
         isAdmin,
         isLoading,
         adminData: !!adminData,
-        isDevAuthenticated
+        isDevAuthenticated,
       });
 
       // Allow access in development mode with localStorage auth
@@ -69,7 +69,7 @@ const AdminDashboard = () => {
     };
 
     checkAdminStatus();
-    
+
     // Load users data
     const loadUsers = async () => {
       try {
@@ -82,7 +82,7 @@ const AdminDashboard = () => {
               email: "john@example.com",
               created_at: "2023-05-12T00:00:00Z",
               order_count: 24,
-              balance: 125.5
+              balance: 125.5,
             },
             {
               id: "usr2",
@@ -90,8 +90,8 @@ const AdminDashboard = () => {
               email: "jane@example.com",
               created_at: "2023-06-18T00:00:00Z",
               order_count: 12,
-              balance: 78.25
-            }
+              balance: 78.25,
+            },
           ]);
         } else if (user && isAdmin) {
           const userData = await getUsers();
@@ -101,7 +101,7 @@ const AdminDashboard = () => {
         console.error("Error loading users:", error);
       }
     };
-    
+
     loadUsers();
   }, [user, isAdmin, isLoading, navigate, adminData]);
 
@@ -111,7 +111,7 @@ const AdminDashboard = () => {
       if (import.meta.env.DEV) {
         localStorage.removeItem("adminAuthenticated");
       }
-      
+
       await signOut();
       navigate("/admin/login");
     } catch (error) {
@@ -350,11 +350,11 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <AdminUsers 
-                  users={users} 
-                  isLoading={isLoading} 
-                  searchQuery={searchQuery} 
-                  onRefresh={() => handleRefresh()} 
+                <AdminUsers
+                  users={users}
+                  isLoading={isLoading}
+                  searchQuery={searchQuery}
+                  onRefresh={() => handleRefresh()}
                 />
               </TabsContent>
 
@@ -633,11 +633,17 @@ const AdminDashboard = () => {
                       <div className="flex items-center justify-between p-4 border rounded-md">
                         <div>
                           <h3 className="font-medium">SMMStone</h3>
-                          <p className="text-sm text-muted-foreground">Primary API provider for social media services</p>
+                          <p className="text-sm text-muted-foreground">
+                            Primary API provider for social media services
+                          </p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Connected</span>
-                          <Button size="sm" variant="outline">Configure</Button>
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                            Connected
+                          </span>
+                          <Button size="sm" variant="outline">
+                            Configure
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -649,4 +655,7 @@ const AdminDashboard = () => {
         </div>
       </div>
     </div>
+  );
+};
 
+export default AdminDashboard;
