@@ -247,6 +247,14 @@ export default function AdminLogin() {
     setShowPassword(!showPassword);
   };
 
+  // For development/testing purposes - allows quick login without Supabase
+  const handleDevLogin = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      navigate("/admin");
+    }, 1000);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
       <Helmet>
@@ -355,6 +363,18 @@ export default function AdminLogin() {
                     ? "Verify"
                     : "Continue"}
               </Button>
+
+              {/* Development mode quick login button */}
+              {import.meta.env.DEV && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full mt-2"
+                  onClick={handleDevLogin}
+                >
+                  Dev Mode: Quick Login
+                </Button>
+              )}
             </form>
           </Form>
         </CardContent>

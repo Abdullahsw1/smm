@@ -24,16 +24,21 @@ import { getOrders } from "@/lib/orders";
 import { getServices } from "@/lib/services";
 import { getProviders } from "@/lib/providers";
 import { syncProviderServices } from "@/lib/api";
+import AdminUsers from "@/components/admin/Users";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [users, setUsers] = useState([]);
   const navigate = useNavigate();
   const { user, adminData, isAdmin } = useAuth();
 
   // Redirect if not logged in as admin
   useEffect(() => {
+    // Check if user is authenticated from localStorage for development
+    const isDevAuthenticated = localStorage.getItem("adminAuthenticated");
+    
     const checkAdminStatus = async () => {
       // Wait a short time to ensure auth context is fully loaded
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -44,7 +49,15 @@ const AdminDashboard = () => {
         isAdmin,
         isLoading,
         adminData: !!adminData,
+        isDevAuthenticated
       });
+
+      // Allow access in development mode with localStorage auth
+      if (import.meta.env.DEV && isDevAuthenticated) {
+        console.log("Dev mode: admin authenticated via localStorage");
+        setIsLoading(false);
+        return;
+      }
 
       if (!isLoading && (!user || !isAdmin)) {
         console.log("Not admin, redirecting to login");
@@ -56,15 +69,58 @@ const AdminDashboard = () => {
     };
 
     checkAdminStatus();
+    
+    // Load users data
+    const loadUsers = async () => {
+      try {
+        if (import.meta.env.DEV) {
+          // Mock data for development
+          setUsers([
+            {
+              id: "usr1",
+              full_name: "John Doe",
+              email: "john@example.com",
+              created_at: "2023-05-12T00:00:00Z",
+              order_count: 24,
+              balance: 125.5
+            },
+            {
+              id: "usr2",
+              full_name: "Jane Smith",
+              email: "jane@example.com",
+              created_at: "2023-06-18T00:00:00Z",
+              order_count: 12,
+              balance: 78.25
+            }
+          ]);
+        } else if (user && isAdmin) {
+          const userData = await getUsers();
+          setUsers(userData);
+        }
+      } catch (error) {
+        console.error("Error loading users:", error);
+      }
+    };
+    
+    loadUsers();
   }, [user, isAdmin, isLoading, navigate, adminData]);
 
   const handleLogout = async () => {
     try {
+      // For development mode
+      if (import.meta.env.DEV) {
+        localStorage.removeItem("adminAuthenticated");
+      }
+      
       await signOut();
       navigate("/admin/login");
     } catch (error) {
       console.error("Error signing out:", error);
     }
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   return (
@@ -160,7 +216,7 @@ const AdminDashboard = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button size="sm">
+              <Button size="sm" onClick={handleRefresh}>
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
@@ -284,6 +340,8 @@ const AdminDashboard = () => {
                         type="search"
                         placeholder="Search users..."
                         className="pl-10 w-64"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
                     <Button>
@@ -292,115 +350,12 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <Card>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left py-3 px-4 font-medium">
-                              ID
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              Name
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              Email
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              Registered
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              Orders
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              Balance
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              Status
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-4">1</td>
-                            <td className="py-3 px-4">John Doe</td>
-                            <td className="py-3 px-4">john.doe@example.com</td>
-                            <td className="py-3 px-4">2023-05-12</td>
-                            <td className="py-3 px-4">24</td>
-                            <td className="py-3 px-4">$125.50</td>
-                            <td className="py-3 px-4">
-                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                                Active
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex space-x-2">
-                                <Button size="sm" variant="outline">
-                                  Edit
-                                </Button>
-                                <Button size="sm" variant="destructive">
-                                  Block
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                          <tr className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-4">2</td>
-                            <td className="py-3 px-4">Jane Smith</td>
-                            <td className="py-3 px-4">
-                              jane.smith@example.com
-                            </td>
-                            <td className="py-3 px-4">2023-06-18</td>
-                            <td className="py-3 px-4">12</td>
-                            <td className="py-3 px-4">$78.25</td>
-                            <td className="py-3 px-4">
-                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                                Active
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex space-x-2">
-                                <Button size="sm" variant="outline">
-                                  Edit
-                                </Button>
-                                <Button size="sm" variant="destructive">
-                                  Block
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                          <tr className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-4">3</td>
-                            <td className="py-3 px-4">Robert Johnson</td>
-                            <td className="py-3 px-4">robert.j@example.com</td>
-                            <td className="py-3 px-4">2023-04-05</td>
-                            <td className="py-3 px-4">36</td>
-                            <td className="py-3 px-4">$210.75</td>
-                            <td className="py-3 px-4">
-                              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
-                                Pending
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex space-x-2">
-                                <Button size="sm" variant="outline">
-                                  Edit
-                                </Button>
-                                <Button size="sm" variant="destructive">
-                                  Block
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </CardContent>
-                </Card>
+                <AdminUsers 
+                  users={users} 
+                  isLoading={isLoading} 
+                  searchQuery={searchQuery} 
+                  onRefresh={() => handleRefresh()} 
+                />
               </TabsContent>
 
               <TabsContent value="orders" className="space-y-6">
@@ -654,30 +609,6 @@ const AdminDashboard = () => {
                               </div>
                             </td>
                           </tr>
-                          <tr className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-4">3</td>
-                            <td className="py-3 px-4">YouTube Views</td>
-                            <td className="py-3 px-4">YouTube</td>
-                            <td className="py-3 px-4">$1.99 per 1000</td>
-                            <td className="py-3 px-4">1000</td>
-                            <td className="py-3 px-4">50,000</td>
-                            <td className="py-3 px-4">SMMStone</td>
-                            <td className="py-3 px-4">
-                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                                Active
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex space-x-2">
-                                <Button size="sm" variant="outline">
-                                  Edit
-                                </Button>
-                                <Button size="sm" variant="destructive">
-                                  Disable
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
                         </tbody>
                       </table>
                     </div>
@@ -686,72 +617,29 @@ const AdminDashboard = () => {
               </TabsContent>
 
               <TabsContent value="settings" className="space-y-6">
-                <h2 className="text-2xl font-bold">System Settings</h2>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">System Settings</h2>
+                  <Button>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                  </Button>
+                </div>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>API Integration Settings</CardTitle>
+                    <CardTitle>API Providers</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        SMMStone API Key
-                      </label>
-                      <Input
-                        type="password"
-                        value="*************************"
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        SMMStone API URL
-                      </label>
-                      <Input
-                        type="text"
-                        value="https://smmstone.com/api/v2"
-                        className="w-full"
-                      />
-                    </div>
-                    <div className="pt-4">
-                      <Button>Save API Settings</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Site Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Site Name
-                      </label>
-                      <Input type="text" value="SMM Panel" className="w-full" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Site Description
-                      </label>
-                      <Input
-                        type="text"
-                        value="Social Media Marketing Services"
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Contact Email
-                      </label>
-                      <Input
-                        type="email"
-                        value="support@smmpanel.com"
-                        className="w-full"
-                      />
-                    </div>
-                    <div className="pt-4">
-                      <Button>Save Site Settings</Button>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 border rounded-md">
+                        <div>
+                          <h3 className="font-medium">SMMStone</h3>
+                          <p className="text-sm text-muted-foreground">Primary API provider for social media services</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Connected</span>
+                          <Button size="sm" variant="outline">Configure</Button>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -761,7 +649,4 @@ const AdminDashboard = () => {
         </div>
       </div>
     </div>
-  );
-};
 
-export default AdminDashboard;
