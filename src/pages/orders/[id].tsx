@@ -2,12 +2,8 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import OrderDetails from "../../components/orders/OrderDetails";
 
-interface OrderPageParams {
-  id: string;
-}
-
 const OrderPage: React.FC = () => {
-  const { id } = useParams<OrderPageParams>();
+  const { id } = useParams<{ id: string }>();
 
   // In a real application, you would fetch the order details based on the ID
   // This is just a placeholder for the UI scaffolding

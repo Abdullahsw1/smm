@@ -310,7 +310,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_users_with_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          full_name: string
+          avatar_url: string
+          balance: number
+          created_at: string
+          updated_at: string
+          order_count: number
+          total_spent: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
